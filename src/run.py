@@ -60,8 +60,7 @@ def main():
 
     path_to_config_file = Path(args.config_location)
     parameters = Parameters(path_to_config_file)
-    path_to_data_and_log_files = Path(parameters.data_directory)
-    log_file_name = str(path_to_data_and_log_files.parent.absolute() / parameters.log_file_name)
+    log_file_name = str(parameters.data_directory / parameters.log_file_name)
     logger = setup_logger(log_file_name)
 
     logger.info(f'Parameters:\n{parameters.display()}')
