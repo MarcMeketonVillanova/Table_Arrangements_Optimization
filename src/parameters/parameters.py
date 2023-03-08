@@ -26,6 +26,8 @@ class Parameters:
         # names of files in the data_directory
         self.attendee_file_name = 'attendees.csv'
         self.log_file_name = 'log.txt'
+        self.table_assignments_file_name = 'table_assignments.csv'
+        self.table_summary_statistics = 'table_summary.csv'
 
         try:
             if path_to_yaml is not None and os.path.exists(path_to_yaml):

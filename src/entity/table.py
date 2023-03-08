@@ -1,5 +1,8 @@
-from typing import Iterable
+from typing import Iterable, Collection
 from collections import defaultdict
+from math import ceil
+
+import pandas as pd
 
 from src.parameters.parameters import Parameters
 from src.entity.attendee import Attendee
@@ -12,22 +15,45 @@ class Table:
     override_different_score: dict[tuple[str, str, str, str], float] = dict()
 
     @classmethod
-    def initialize_parameters(cls, parameters: Parameters, attendees: list[Attendee]):
+    def initialize_parameters(cls, parameters: Parameters, attendees: Collection[Attendee]):
         cls.default_different_score = parameters.default_different_score
         cls.attribute_types = parameters.attribute_field_names.copy()
         cls.attribute_type_weights = {attribute_name: parameters.default_quadratic_penalty
-                                      if attribute_name not in parameters.override_quadratic_penalty
-                                      else parameters.override_quadratic_penalty[attribute_name]
+        if attribute_name not in parameters.override_quadratic_penalty
+        else parameters.override_quadratic_penalty[attribute_name]
                                       for attribute_name in cls.attribute_types}
         for attribute_type_1, item1, attribute_type_2, item2, score in parameters.override_different_score:
             cls.override_different_score[(attribute_type_1, item1, attribute_type_2, item2)] = score
 
-        cntr: dict[str, defaultdict] = {attribute_type: defaultdict(int)
-                                        for attribute_type in parameters.attribute_field_names}
+        num_attendees = len(attendees)
+        cls.num_tables = ceil(num_attendees / parameters.max_group_size)
+
+        cls.attribute_counter: dict[str, defaultdict] = {attribute_type: defaultdict(int)
+                                                         for attribute_type in parameters.attribute_field_names}
         for attendee in attendees:
             attendee.assigned_to_table = None
             for attribute_type, item in attendee.attributes.items():
-                cntr[attribute_type][item] += 1
+                cls.attribute_counter[attribute_type][item] += 1
+
+        cls.upper_bound_by_item: dict[str, dict[str, int]] = {attribute_name: {item: ceil(count / cls.num_tables)
+                                                                               for item, count in cls.attribute_counter[
+                                                                                   attribute_name].items()}
+                                                              for attribute_name, item_counts in
+                                                              cls.attribute_counter.items()}
+
+    @classmethod
+    def build_upper_bound_df(cls) -> pd.DataFrame:
+        df = pd.DataFrame({'Upper_Bound': [upper_bound
+                                           for attribute_name, upper_bounds in cls.upper_bound_by_item.items()
+                                           for item, upper_bound in upper_bounds.items()]},
+                          index=[[attribute_name for attribute_name, upper_bounds in cls.upper_bound_by_item.items()
+                                  for item in upper_bounds.keys()],
+                                 [item for attribute_name, upper_bounds in cls.upper_bound_by_item.items()
+                                  for item in upper_bounds.keys()]
+                                 ])
+
+        return df
+
     def __init__(self, table_id: int):
         self.table_id = table_id
 
@@ -53,7 +79,11 @@ class Table:
             self.num_by_attribute_value[attribute_type][attribute] -= 1
 
     def upper_bound_violations(self) -> float:
-        :
+        penalty = sum(max(0, count - Table.upper_bound_by_item[attribute_name][item])
+                      for attribute_name, item_counts in self.num_by_attribute_value.items()
+                      for item, count in item_counts.items()
+                      )
+        return penalty
 
     def score(self) -> float:
         penalty_score = 0.0

@@ -2,6 +2,7 @@ from typing import Union
 import logging
 
 import pandas as pd
+import numpy as np
 
 from src.parameters.parameters import Parameters
 from src.entity.table import Table
@@ -42,27 +43,22 @@ def output_solution(parameters: Parameters, tables: list[Table]) -> pd.DataFrame
 
 def output_summary(parameters: Parameters, tables: list[Table]) -> pd.DataFrame:
     attendee_solution_df = output_solution(parameters, tables)
-
-    _, group_scores = total_scores(groups, diversity_score)
-
-    attribute_by_group_count = ubba.attribute_counts_by_group(num_groups, groups, attendees)
-    _, penalty_scores = ubba.total_upper_bound_penalty(attribute_by_group_count)
-
-    group_scores_df = pd.DataFrame({"Group": [table.table_id + 1 for table in tables],
+    # attendee_solution_df.set_index('Table')
+    table_scores_df = pd.DataFrame({"Table": [table.table_id + 1 for table in tables],
                                     "Score": [table.score() for table in tables],
-                                    "Penalty": [0.0 for table in tables],
+                                    "Penalty": [table.upper_bound_violations() for table in tables],
                                     "Table_Size": [len(table.attendees) for table in tables]})
-    group_scores_df.set_index('Group')
-    summary_df = (
-        group_scores_df
-        .join(attendee_solution_df.pivot_table(index="Group", values='Gender', columns="Role", fill_value=0,
-                                               aggfunc=np.count_nonzero))
-        .join(attendee_solution_df.pivot_table(index="Group", values='Gender', columns="Office", fill_value=0,
-                                               aggfunc=np.count_nonzero))
-        .join(attendee_solution_df.pivot_table(index="Group", values='Gender', columns="Start_Year", fill_value=0,
-                                               aggfunc=np.count_nonzero))
-        .join(attendee_solution_df.pivot_table(index="Group", values='Office', columns="Gender", fill_value=0,
-                                               aggfunc=np.count_nonzero))
-    )
-    summary_df['Group'] = summary_df['Group'] + 1
+    table_scores_df.set_index('Table', inplace=True)
+
+    upper_bound_df = Table.build_upper_bound_df()
+    print(upper_bound_df.transpose())
+
+    summary_df = table_scores_df
+    for attribute_name in parameters.attribute_field_names:
+        summary_df = summary_df.join(attendee_solution_df.pivot_table(index="Table",
+                                                                      values=parameters.id_field_name,
+                                                                      columns=attribute_name,
+                                                                      fill_value=0,
+                                                                      aggfunc=np.count_nonzero))
+
     return summary_df

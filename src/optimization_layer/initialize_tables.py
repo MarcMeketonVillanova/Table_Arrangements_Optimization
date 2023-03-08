@@ -7,8 +7,7 @@ from src.entity.table import Table
 
 
 def initialize_tables(parameters: Parameters, attendees: Collection[Attendee]) -> List[Table]:
-    num_attendees = len(attendees)
-    num_tables = ceil(num_attendees / parameters.max_group_size)
-    Table.initialize_parameters(parameters)
-    tables = [Table(table_id) for table_id in range(num_tables)]
+    Table.initialize_parameters(parameters, attendees)
+    tables = [Table(table_id) for table_id in range(Table.num_tables)]
+    print(Table.upper_bound_by_item)
     return tables

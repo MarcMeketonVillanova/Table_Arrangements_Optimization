@@ -2,11 +2,16 @@
 max_group_size:                    8
 
 # location of directories and files
-data_directory:                    C:\DocumentsOliverWyman\CCG_Grouping_Model\maximum_diversity\data_and_log_files
+data_directory:                    C:\DocumentsOliverWyman\Table_Arrangements_Optimization\data_and_log_files
 
 # names of files in the data_directory
+## input
 attendee_file_name:                attendees.csv
+
+## output files
 log_file_name:                     log.txt
+table_assignments_file_name:       table_assignments.csv
+table_summary_statistics:          table_summary.csv
 
 # Fields
 id_field_name:                     ID
