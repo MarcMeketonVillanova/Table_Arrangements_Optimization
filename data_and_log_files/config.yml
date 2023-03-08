@@ -1,0 +1,27 @@
+# number of tables is implicit
+max_group_size:                    8
+
+# location of directories and files
+data_directory:                    C:\DocumentsOliverWyman\CCG_Grouping_Model\maximum_diversity\data_and_log_files
+
+# names of files in the data_directory
+attendee_file_name:                attendees.csv
+log_file_name:                     log.txt
+
+# Fields
+id_field_name:                     ID
+name_field_name:                   Name
+attribute_field_names:             [Office,Role,Start_Class,Gender]
+
+# Score parameters
+default_quadratic_penalty:         1
+override_quadratic_penalty:        {Role: 2}
+
+default_different_score:           0
+
+# Princeton has only 3 attendees, all SPC and no partners
+#   So want to try to have the Princeton attendees sit with a partner
+# format for overrides is a list of:  [attribute_name_1, specific attribute, attribute_name_2, specific attribute, override score]
+override_different_score:          [[Role,PTR,Office,Princeton,-1]]
+# Technical parameters
+max_run_time_seconds:              300
