@@ -131,3 +131,6 @@ dmypy.json
 # pycharm configuration
 .idea/
 .idea/csv-plugin.xml
+data_and_log_files/log.txt
+data_and_log_files/table_summary.csv
+data_and_log_files/table_assignments.csv

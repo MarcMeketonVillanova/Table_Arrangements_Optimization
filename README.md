@@ -11,13 +11,14 @@ There are two inputs:
 
 In the folder 'data_and_log_files' is a sample list of attendees who are employees of a company.  It is a comma separated file and the first few rows look like:
 
+```
 ID,Name,Office,Role,Start_Class,Gender
 1,Madonna,Sao Paulo,PTR,PRE_COVID_JOINER,F
 2,Patti Smith,Sao Paulo,CCG,COVID_JOINER,F
 3,Grace Slick,Atlanta,SPC,PRE_COVID_JOINER,F
 4,Tina Turner,Atlanta,SPC,PRE_COVID_JOINER,F
 5,Janis Joplin,Atlanta,SPC,PRE_COVID_JOINER,F
-
+```
 
 The first two columns identify the attendee, and usually the **ID** field is a unique identifier.  The **Name** field does not have to be unique.
 
@@ -33,7 +34,7 @@ The next columns are attributes.  In this example:
 
 The configuration file uses standard YAML syntax and is divided into various sections.
 
-The first section is the size of the tables (number of attendee).  The number of tables that will be use is $ceil(n/s)$ where $n$ is the number of attendees and $s$ is the `max_group_size`.  The $ceil()$ function is called the *ceiling* function is essentially the 'round up' function
+The first section is the size of the tables (number of attendee).  The number of tables that will be use is $ceil(n/s)$ where $n$ is the number of attendees and $s$ is the `max_group_size`.  The $ceil()$ function (called the *ceiling* function) is essentially the 'round up' function
 
 ```yaml
 # number of tables is implicit
@@ -190,7 +191,7 @@ Table,ID,NAME,Office,Role,Start_Class,Gender
 1,10,Ann Wilson,Atlanta,SPT,PRE_COVID_JOINER,F
 1,18,Jerry Garcia,Sao Paulo,ACG,COVID_JOINER,M
 1,19,Liam Gallagher,Atlanta,SPC,PRE_COVID_JOINER,M
-``
+```
 
 The **table summary** shows a one-line summary for each table.  The columns are:
 1.  Table is the table number
@@ -212,4 +213,71 @@ Table,Score,Penalty,Table_Size,Atlanta,London,Montreal,Princeton,Sao Paulo,ACG,C
 9,103.0,0,7,3,0,1,1,2,1,2,0,3,1,2,5,2,5,0
 ```
 
+## How it works
 
+This section goes through the underlying logic, and discusses some of the math, as well as the differences between this work and other published work.
+
+### Overview of the problem
+
+The literature sometimes calls this the "Maximally Diverse Grouping Problem".  See, for example, https://www.sciencedirect.com/science/article/pii/S0377221716303381
+
+The general setup is that we have $m$ attendees $A={1,2, ... ,m}$ and $n$ tables $T={1,2,...,n}$.  Let the binary variable $x_{a,t} \in {0,1}$ with $a \in A$, $t \in T$ represent an assignment of an attendee to a table.  This means $x_{a,t}=1$ if attendee $a$ is assigned to table $t$ and $x_{a,t}=0$ otherwise.
+
+We need to assign every one using the constraint
+
+$$\sum_{t \in T} x_{a,t}=1,  \forall{a \in A}$$
+
+Letting $s$ be the maximize table size, the number of tables we need is $n=\lceil m/s \rceil = ceil(m/s)$.  We need to assign at most $s$ attendees to each of the $n$ tables:
+
+$$\sum_{a \in A} x_{a,t}<=s, \forall{t \in T}$$
+
+Finally, the objective function found in the literature is usually written as a *quadratic assignment problem*:
+
+$$\max \sum_{t \in T}\sum_{a_1 \in A}\sum_{a_2 \in A, a_1 \ne a_2} d_{a_1,a_2}x_{a_1,t}x_{a_2,t}$$
+
+To understand this, note that $x_{a_1,t}x_{a_2,t}=1$ only when attendees $a_1$ and $a_2$ both are assigned to table $t$.  The coefficient $d_{a_1,a_2}$ represents a diversity score and should be high when attendees $a_1$ and $a_2$ are not similar and low when they are similar.
+
+This quadratic objective function automatically makes this problem very hard to solve (so called $NP$-complete).
+
+Part of the objective that we use -- the part that uses the 'sameness' score -- follows this form.  But that is intended for fine-tuning the solution.  The main objective is to spreadout the various attributes and we use the concept of counting the number of attendees with a specific attribute and penalizing when it is too large.
+
+This is perhaps the largest difference between this work and algorithms found in the literature.  We focus on that fact that each attendee has specific attributes and spreading out those attributes at each table is the primary objective.
+
+### Solution approach
+
+We solve this in two steps
+1.  Choose a single attribute type -- one that has many attribute items -- and evenly distribute them out one-seat per table (but all the tables) at time.
+1.  Randomly choose for each table an attendee, remove that attendee, then reassign the attendees to the tables to minimize a penalty function
+
+The details will be given by the example supplied.  Hopefully it is more clear than writing a lot of mathematical equations.
+
+The central task to assign attendees to a single seat at each table.  This is done by using a network flow algorithm.  Network flow algorithms are readily available in a number of programming languages and run very quickly.
+
+Let's explain by using our example data.  Recall that the example had 67 attendees, with a max table size of 8 implying we need to populate 9 tables, of which 4 will have 8 people and 5 will have 7 people.  Notice that there are 20 attendees from the Sao Paulo office.
+
+With a focus on assigning the 20 Sao Paulo attendees to the 9 tables, suppose that we already assigned one Sao Paulo attendee to each table, leaving 11 Sao Paulo attendees to further assign.
+
+To assign the next set of 9 Sao Paulo attendees to the tables, we setup a network flow model as diagrammed below.  On the LHS we see the detais of the 11 Sao Paulo employees not assigned yet, on the RHS are the 9 Sao Paulo employees already assigned (one to each table) as well as a 'fake' node to represent the Sao Paulo attendees who will not be assigned in this task.
+
+The triangles are the 'demands' for the 'Table' and 'Fake' nodes  The supplies from the LHS attendees are always 1 and not shown in the diagram.
+
+There are 11 x 10 = 110 arcs, but only a few of them are shown.  There is one arc from every LHS node to every RHS node.
+
+The boxes on these arcs present the penalty score if that attendee is assigned to that table.  If Brian Jones is assigned to Table 1 where Jerry Garcia is currently assigned, there is a score of 16 because there would be 2 Sao Paulo attendees, 2 ACG's, 2 Covid Joiners and 2 males at the table ($16 = 2^2+2^2+2^2+2^2$).  If Madonna is assigned to Table 8 with Gloria Groove, they only overlap that they are both Sao Paulo office.  But the other three attributes are different (6 attributes only occur once) leanding to the score of 10.
+
+There is no cost to go to the fake node.
+
+![Network flow model](network_flow.png)
+
+We can find the optimal assignment using a 'network flow algorithm'.  Such an algorithm is well known and there are open-source implementations available in many programming languages.
+
+The solution is illustrated below and shows the assignments 
+
+
+```
+
+To continue the example, there are 11 attendees from Sao Paulo not yet assigned to any table.  Create a network flow graph that looks like
+
+Step 1:
+a.  Find the attribute type that has the most number of unique items.  In our example, both Role and Office have five different items, so either would be used.  In the below, we will use Office as the starting attribute.
+b.  Take an item (in the case, Sao Paulo) from the starting attribute.  There are 20 attendees from Sao Paulo.  Create a graph with 30 nodes, 20 of them represent each attendee from Sao Paulo.  9 nodes represents the 9 tables to be populated, as well as a 'fake' node.  Create arcs that go from each attendee to each table and to the 'fake' node.  We will model this as a 'network flow' problem where the supply is on the attendee nodes and has a supply of 1, the demand is on the table nodes (demand of 1), and the fake node will have a demand of 11 (20 - 9).

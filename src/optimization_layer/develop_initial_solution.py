@@ -44,6 +44,6 @@ def initial_solution(tables: list[Table],
                 attendee.assigned_to_table = table
                 table.add_attendee(attendee)
 
-            # print_tables_compressed(tables)
+            print_tables_compressed(tables)
 
     return
