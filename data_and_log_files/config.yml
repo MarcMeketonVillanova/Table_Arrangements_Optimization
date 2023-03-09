@@ -22,11 +22,17 @@ attribute_field_names:             [Office,Role,Start_Class,Gender]
 default_quadratic_penalty:         1
 override_quadratic_penalty:        {Role: 2}
 
-default_different_score:           0
+default_sameness_score:           0
+
+
+# Format for overrides is a list of:  [attribute_name_1, specific attribute, attribute_name_2, specific attribute, override score]
+#  NOTE: If no override is needed, then use the folling line:
+# override_sameness_score:          []
 
 # Princeton has only 3 attendees, all SPC and no partners
 #   So want to try to have the Princeton attendees sit with a partner
-# format for overrides is a list of:  [attribute_name_1, specific attribute, attribute_name_2, specific attribute, override score]
-override_different_score:          [[Role,PTR,Office,Princeton,-1]]
+override_sameness_score:          [[Role,PTR,Office,Princeton,-1]]
+
 # Technical parameters
-max_run_time_seconds:              300
+max_run_time_seconds:              30
+max_iterations:                    400

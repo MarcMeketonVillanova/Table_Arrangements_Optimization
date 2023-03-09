@@ -16,14 +16,15 @@ class Table:
 
     @classmethod
     def initialize_parameters(cls, parameters: Parameters, attendees: Collection[Attendee]):
-        cls.default_different_score = parameters.default_different_score
+        cls.default_different_score = parameters.default_sameness_score
         cls.attribute_types = parameters.attribute_field_names.copy()
         cls.attribute_type_weights = {attribute_name: parameters.default_quadratic_penalty
-        if attribute_name not in parameters.override_quadratic_penalty
-        else parameters.override_quadratic_penalty[attribute_name]
+                                      if attribute_name not in parameters.override_quadratic_penalty
+                                      else parameters.override_quadratic_penalty[attribute_name]
                                       for attribute_name in cls.attribute_types}
-        for attribute_type_1, item1, attribute_type_2, item2, score in parameters.override_different_score:
-            cls.override_different_score[(attribute_type_1, item1, attribute_type_2, item2)] = score
+        for attribute_type_1, item1, attribute_type_2, item2, score in parameters.override_sameness_score:
+            cls.override_different_score[(attribute_type_1, item1,
+                                          attribute_type_2, item2)] = score
 
         num_attendees = len(attendees)
         cls.num_tables = ceil(num_attendees / parameters.max_group_size)
@@ -93,7 +94,7 @@ class Table:
                 penalty_score += attribute_type_weight * count * count
         for attendee1 in self.attendees:
             for attendee2 in self.attendees:
-                if attendee1.item_id == attendee2.item_id:
+                if attendee1.item_id > attendee2.item_id:
                     continue
                 for attribute_type_1 in Table.attribute_types:
                     if attendee1.attributes[attribute_type_1] == attendee2.attributes[attribute_type_1]:
@@ -101,6 +102,10 @@ class Table:
                     for attribute_type_2 in Table.attribute_types:
                         a_tuple = (attribute_type_1, attendee1.attributes[attribute_type_1],
                                    attribute_type_2, attendee2.attributes[attribute_type_2])
+                        if a_tuple in Table.override_different_score:
+                            penalty_score += Table.override_different_score[a_tuple]
+                        a_tuple = (attribute_type_2, attendee2.attributes[attribute_type_2],
+                                   attribute_type_1, attendee1.attributes[attribute_type_1])
                         if a_tuple in Table.override_different_score:
                             penalty_score += Table.override_different_score[a_tuple]
         return penalty_score

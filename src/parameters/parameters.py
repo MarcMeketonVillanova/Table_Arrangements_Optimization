@@ -16,9 +16,10 @@ class Parameters:
         self.attribute_field_names: list[str] = ['Office', 'Role', 'Start_Class', 'Gender']
         self.default_quadratic_penalty: float = 1.0
         self.override_quadratic_penalty: dict[str, float] = dict()
-        self.default_different_score: float = 0.0
-        self.override_different_score: list[tuple[str, str, str, str, float]] = list()
+        self.default_sameness_score: float = 0.0
+        self.override_sameness_score: list[tuple[str, str, str, str, float]] = list()
         self.max_run_time_seconds: int = 300
+        self.max_iterations: int = 500
 
         # location of directories and files
         self.data_directory: Path = Path(r'..\..\data_and_log_files')
@@ -47,7 +48,8 @@ class Parameters:
             raise Exception(msg)
 
         # Sanity checks
-        self.attribute_field_names = [field_name.strip() for field_name in self.attribute_field_names]
+        self.attribute_field_names = [field_name.strip()
+                                      for field_name in self.attribute_field_names]
         override_fields_not_found = [attribute_name
                                      for attribute_name in self.override_quadratic_penalty.keys()
                                      if attribute_name not in self.attribute_field_names]
@@ -57,7 +59,7 @@ class Parameters:
 
         override_different_score = list()
         override_issues = ""
-        for override in self.override_different_score:
+        for override in self.override_sameness_score:
             if len(override) != 5:
                 override_issues += 'Expected an override in the form [attribute, item, attribute, item, score]'
                 f', received {override}\n'
@@ -76,7 +78,7 @@ class Parameters:
             msg = 'Illegal overrides.  Expected a list of 5-element list, each one of the form ' \
                   '[attribute, item, attribute, item, score]\n'
             raise ValueError(msg + override_issues)
-        self.override_different_score = override_different_score
+        self.override_sameness_score = override_different_score
 
         self.data_directory = Path(self.data_directory)
 

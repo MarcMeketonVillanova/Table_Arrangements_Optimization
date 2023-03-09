@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 import datetime
 import logging
@@ -5,6 +7,8 @@ import argparse
 import signal
 
 import pandas as pd
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from src.parameters.parameters import Parameters
 from src.data_layer.read_attendees import read_attendees
@@ -54,7 +58,6 @@ def main():
     parser.add_argument("--config_location", type=str, help="YAML configuration file location - full file path",
                         default=default_config_loc)
     args = parser.parse_args()
-    start_time = datetime.datetime.now()
 
     signal.signal(signal.SIGINT, ctrl_c_handler)
 
@@ -67,17 +70,16 @@ def main():
 
     attendees = read_attendees(parameters)
     tables = initialize_tables(parameters, attendees)
-    print(attendees)
-    print(tables)
+    logger.info(f'Attendees: {attendees}')
 
     pd.options.display.max_rows=None
     pd.options.display.max_columns = None
     pd.options.display.width = None
     initial_solution(tables, attendees, parameters)
 
-    print(output_solution(parameters, tables))
+    logger.info(f'Initial Solution\n{output_solution(parameters, tables)}')
 
-    print(output_summary(parameters, tables))
+    logger.info(f'Table summary statistics for initial solution\n{output_summary(parameters, tables)}')
 
     iterate_reoptimization(parameters, tables)
 
@@ -85,7 +87,8 @@ def main():
     summary_df = output_summary(parameters, tables)
 
     solution_df.to_csv(parameters.data_directory / parameters.table_assignments_file_name, index=False)
-    summary_df.to_csv(parameters.data_directory / parameters.table_summary_statistics, index=False)
+    summary_df.to_csv(parameters.data_directory / parameters.table_summary_statistics, index=True)
+    logger.info(f'Finished in {(datetime.datetime.now() - globals.start_time).total_seconds():.2f} seconds')
 
 if __name__ == '__main__':
     main()
