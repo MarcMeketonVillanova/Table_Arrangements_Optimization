@@ -223,7 +223,7 @@ The literature sometimes calls this the "Maximally Diverse Grouping Problem".  S
 
 The general setup is that we have $m$ attendees $A={1,2, ... ,m}$ and $n$ tables $T={1,2,...,n}$.  Let the binary variable $x_{a,t} \in {0,1}$ with $a \in A$, $t \in T$ represent an assignment of an attendee to a table.  This means $x_{a,t}=1$ if attendee $a$ is assigned to table $t$ and $x_{a,t}=0$ otherwise.
 
-We need to assign every one using the constraint
+We assign every attendee using the constraint
 
 $$\sum_{t \in T} x_{a,t}=1,  \forall{a \in A}$$
 
@@ -233,51 +233,56 @@ $$\sum_{a \in A} x_{a,t}<=s, \forall{t \in T}$$
 
 Finally, the objective function found in the literature is usually written as a *quadratic assignment problem*:
 
-$$\max \sum_{t \in T}\sum_{a_1 \in A}\sum_{a_2 \in A, a_1 \ne a_2} d_{a_1,a_2}x_{a_1,t}x_{a_2,t}$$
+$$\max \sum_{t \in T}\sum_{a_1 \in A}\sum_{a_2 \in A} d_{a_1,a_2}x_{a_1,t}x_{a_2,t}$$
 
 To understand this, note that $x_{a_1,t}x_{a_2,t}=1$ only when attendees $a_1$ and $a_2$ both are assigned to table $t$.  The coefficient $d_{a_1,a_2}$ represents a diversity score and should be high when attendees $a_1$ and $a_2$ are not similar and low when they are similar.
 
 This quadratic objective function automatically makes this problem very hard to solve (so called $NP$-complete).
 
-Part of the objective that we use -- the part that uses the 'sameness' score -- follows this form.  But that is intended for fine-tuning the solution.  The main objective is to spreadout the various attributes and we use the concept of counting the number of attendees with a specific attribute and penalizing when it is too large.
-
-This is perhaps the largest difference between this work and algorithms found in the literature.  We focus on that fact that each attendee has specific attributes and spreading out those attributes at each table is the primary objective.
+Our two-part objective function follows this form, although we never need to explicitly derive the coefficients $d_{a_1,a_2}$
 
 ### Solution approach
 
 We solve this in two steps
-1.  Choose a single attribute type -- one that has many attribute items -- and evenly distribute them out one-seat per table (but all the tables) at time.
+1.  Choose a single attribute type -- one that has many attribute items -- and evenly distribute them out one-seat per table at a time.
 1.  Randomly choose for each table an attendee, remove that attendee, then reassign the attendees to the tables to minimize a penalty function
 
-The details will be given by the example supplied.  Hopefully it is more clear than writing a lot of mathematical equations.
+The central task in both of these steps is to assign attendees to a single seat at each table.  This is done by using a network flow algorithm.  Network flow algorithms are readily available in a number of programming languages and run very quickly.
 
-The central task to assign attendees to a single seat at each table.  This is done by using a network flow algorithm.  Network flow algorithms are readily available in a number of programming languages and run very quickly.
+Let's explain by using our example data.  Recall that the example had 67 attendees, with a max table size of 8 implying we need to populate 9 tables, of which 4 will have 8 people and 5 will have 7 people.  We will focus on assigning the 20 Sao Paulo attendees to the 9 tables.  Suppose that we already assigned one Sao Paulo attendee to each table, leaving 11 Sao Paulo attendees to further assign.
 
-Let's explain by using our example data.  Recall that the example had 67 attendees, with a max table size of 8 implying we need to populate 9 tables, of which 4 will have 8 people and 5 will have 7 people.  Notice that there are 20 attendees from the Sao Paulo office.
-
-With a focus on assigning the 20 Sao Paulo attendees to the 9 tables, suppose that we already assigned one Sao Paulo attendee to each table, leaving 11 Sao Paulo attendees to further assign.
-
-To assign the next set of 9 Sao Paulo attendees to the tables, we setup a network flow model as diagrammed below.  On the LHS we see the detais of the 11 Sao Paulo employees not assigned yet, on the RHS are the 9 Sao Paulo employees already assigned (one to each table) as well as a 'fake' node to represent the Sao Paulo attendees who will not be assigned in this task.
+To assign the next set of 9 Sao Paulo attendees to the tables, we setup a network flow model as diagrammed below.  On the LHS we see the details of the 11 Sao Paulo employees not assigned yet, on the RHS are the 9 Sao Paulo employees already assigned (one to each table) as well as a 'fake' node to represent the Sao Paulo attendees who will not be assigned in this task.
 
 The triangles are the 'demands' for the 'Table' and 'Fake' nodes  The supplies from the LHS attendees are always 1 and not shown in the diagram.
 
 There are 11 x 10 = 110 arcs, but only a few of them are shown.  There is one arc from every LHS node to every RHS node.
 
-The boxes on these arcs present the penalty score if that attendee is assigned to that table.  If Brian Jones is assigned to Table 1 where Jerry Garcia is currently assigned, there is a score of 16 because there would be 2 Sao Paulo attendees, 2 ACG's, 2 Covid Joiners and 2 males at the table ($16 = 2^2+2^2+2^2+2^2$).  If Madonna is assigned to Table 8 with Gloria Groove, they only overlap that they are both Sao Paulo office.  But the other three attributes are different (6 attributes only occur once) leanding to the score of 10.
+The boxes on these arcs present the penalty score if that attendee is assigned to that table.  If Brian Jones is assigned to Table 1 where Jerry Garcia is currently assigned, there is a score of 16 because there would be 2 Sao Paulo attendees, 2 ACG's, 2 Covid Joiners and 2 males at the table ($16 = 2^2+2^2+2^2+2^2$).  If Madonna is assigned to Table 8 with Gloria Groove, the only attribute overlap is that they are both from the Sao Paulo office.  But the other three attributes are different (6 attributes only occur once) leading to the score of 10.
 
 There is no cost to go to the fake node.
 
 ![Network flow model](network_flow.png)
 
-We can find the optimal assignment using a 'network flow algorithm'.  Such an algorithm is well known and there are open-source implementations available in many programming languages.
+The 'network flow algorithm' is used to optimally assign 9 of the 11 remaining Sao Paulo attendees, one assigned per table.
 
-The solution is illustrated below and shows the assignments 
+**Because we are only assigning one attendee per table, we can evaluate the quadratic objective function easily, and still use a linear optimization method**.  This is because we can pre-determine the objective at each table for each possible attendee.  This is not true if we wanted to assign two people to each table in a single pass.
 
+The solution is illustrated below and shows the assignments, the first row in each bubble was the original attendee and the second row is the newly assigned attendee.
 
-```
+![Network flow solution](network_flow_solution.png)
 
-To continue the example, there are 11 attendees from Sao Paulo not yet assigned to any table.  Create a network flow graph that looks like
+The second row has highlights to show what was different from the first row. Note that three tables had a second assignment with one attribute difference, three had two attribute differences, and three had three attribute differences. This indicates that the network flow algorithm did try to diversify the tables.
 
-Step 1:
-a.  Find the attribute type that has the most number of unique items.  In our example, both Role and Office have five different items, so either would be used.  In the below, we will use Office as the starting attribute.
-b.  Take an item (in the case, Sao Paulo) from the starting attribute.  There are 20 attendees from Sao Paulo.  Create a graph with 30 nodes, 20 of them represent each attendee from Sao Paulo.  9 nodes represents the 9 tables to be populated, as well as a 'fake' node.  Create arcs that go from each attendee to each table and to the 'fake' node.  We will model this as a 'network flow' problem where the supply is on the attendee nodes and has a supply of 1, the demand is on the table nodes (demand of 1), and the fake node will have a demand of 11 (20 - 9).
+The algorithm in more detail is:
+
+**Step 1:**
+a.  Find the attribute type that has the most number of unique items.  In our example, both Role and Office have five different items, so either would be used.  In the below, we will use *Office* as the starting attribute.
+b.  Take an item (in the case, *Sao Paulo*) from the starting attribute.  There are 20 attendees from Sao Paulo.  Make 3 passes using the network flow formulation shown above.
+  - The first pass has 20 LHS nodes (one for each attendee) and 9 RHS table nodes and a RHS 'fake' node. The objective function is trivial because all the tables are empty, and the assignments that are made are essentially random.
+  - The second pass is to assign the remaining 9 of the 11 remaining attendees to the 9 tables - exactly as we showed.
+  - The third pass to assign the remaining 2 attendees to one of the 9 tables is slightly different.  Here the LHS has 2 nodes for the attendees and a 'fake' node with supply of 7.  The RHS has 9 table nodes.  The network flow optimization will pick the two tables that provide the most diversity when the attendees are added.
+  c.  After Sao Paulo is fully assigned, another office location is picked.  Let's say Atlanta that has 26 attendees.  We first use the network flow model to assign 7 of them to the 7 tables that only have 2 attendees so that after that, all 9 tables have 3 attendees
+  d.  Continue until all attendees are assigned
+
+  **Step 2:**
+  Randomly choose one attendee from each table, then use the network flow algorithm to reassign these attendees to the tables.  No need for a 'fake' node

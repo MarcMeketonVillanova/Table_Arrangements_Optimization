@@ -1,6 +1,5 @@
 import logging
 import pandas as pd
-from pyomo.core.kernel.parameter import parameter
 
 from src.parameters.parameters import Parameters
 from src.entity.attendee import Attendee
