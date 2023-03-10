@@ -27,7 +27,7 @@ class Table:
                                           attribute_type_2, item2)] = score
 
         num_attendees = len(attendees)
-        cls.num_tables = ceil(num_attendees / parameters.max_group_size)
+        cls.num_tables = ceil(num_attendees / parameters.max_table_size)
 
         cls.attribute_counter: dict[str, defaultdict] = {attribute_type: defaultdict(int)
                                                          for attribute_type in parameters.attribute_field_names}

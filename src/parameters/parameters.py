@@ -10,7 +10,7 @@ class Parameters:
 
         # set default values, which will be overwritten once the yml file is read
         # PyCharm also uses the below for 'intellisense'
-        self.max_group_size: int = 10
+        self.max_table_size: int = 10
         self.id_field_name: str = 'ID'
         self.name_field_name: str = 'Name'
         self.attribute_field_names: list[str] = ['Office', 'Role', 'Start_Class', 'Gender']

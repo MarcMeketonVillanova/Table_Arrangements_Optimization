@@ -1,5 +1,5 @@
 # number of tables is implicit
-max_group_size:                    8
+max_table_size:                    8
 
 # location of directories and files
 data_directory:                    C:\DocumentsOliverWyman\Table_Arrangements_Optimization\data_and_log_files
