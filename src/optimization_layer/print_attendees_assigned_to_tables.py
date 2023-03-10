@@ -6,7 +6,6 @@ import numpy as np
 
 from src.parameters.parameters import Parameters
 from src.entity.table import Table
-from src.entity.attendee import Attendee
 
 logger: logging.Logger = logging.getLogger(__name__)
 

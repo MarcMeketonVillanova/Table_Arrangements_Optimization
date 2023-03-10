@@ -30,9 +30,10 @@ def read_attendees(parameters: Parameters) -> list[Attendee]:
 
     attendee_list = []
     for row in attendees_df.itertuples(index=False):
+        # noinspection PyProtectedMember
         row_as_dict = row._asdict()
         attributes_used = {k.strip(): v.strip()
-                           for k,v in row_as_dict.items()
+                           for k, v in row_as_dict.items()
                            if k.strip() in parameters.attribute_field_names}
         attendee = Attendee(row_as_dict[parameters.id_field_name],
                             row_as_dict[parameters.name_field_name],

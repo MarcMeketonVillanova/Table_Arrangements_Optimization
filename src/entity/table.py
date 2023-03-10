@@ -13,6 +13,9 @@ class Table:
     attribute_types: Iterable[str] = list()
     default_different_score: float = 0.0
     override_different_score: dict[tuple[str, str, str, str], float] = dict()
+    num_tables: int = 0
+    upper_bound_by_item: dict[str, dict[str, int]] = dict()
+    attribute_counter: dict[str, defaultdict] = dict()
 
     @classmethod
     def initialize_parameters(cls, parameters: Parameters, attendees: Collection[Attendee]):
@@ -48,7 +51,7 @@ class Table:
                                            for attribute_name, upper_bounds in cls.upper_bound_by_item.items()
                                            for item, upper_bound in upper_bounds.items()]},
                           index=[[attribute_name for attribute_name, upper_bounds in cls.upper_bound_by_item.items()
-                                  for item in upper_bounds.keys()],
+                                  for _ in upper_bounds.keys()],
                                  [item for attribute_name, upper_bounds in cls.upper_bound_by_item.items()
                                   for item in upper_bounds.keys()]
                                  ])

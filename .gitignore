@@ -134,3 +134,5 @@ dmypy.json
 data_and_log_files/log.txt
 data_and_log_files/table_summary.csv
 data_and_log_files/table_assignments.csv
+src/run.py
+data_and_log_files/table_summary.csv

@@ -73,7 +73,8 @@ class Parameters:
                 override_score = float(score)
             except ValueError:
                 override_issues += f'Could not convert score {score} to a float'
-            override_different_score.append(tuple(override))
+                override_score = 0.0  # makes pylint happy
+            override_different_score.append((attribute1, item1, attribute2, item2, override_score))
         if len(override_issues) > 0:
             msg = 'Illegal overrides.  Expected a list of 5-element list, each one of the form ' \
                   '[attribute, item, attribute, item, score]\n'

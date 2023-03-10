@@ -1,5 +1,4 @@
 from typing import Collection, List
-from math import ceil
 
 from src.parameters.parameters import Parameters
 from src.entity.attendee import Attendee

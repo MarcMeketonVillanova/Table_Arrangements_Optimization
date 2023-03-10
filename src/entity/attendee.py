@@ -7,10 +7,10 @@ if TYPE_CHECKING:
 class Attendee:
     class_item_id: int = 0
 
-    def __init__(self, id: Union[str, int], name: str, attributes: dict[str, str]):
+    def __init__(self, _id: Union[str, int], name: str, attributes: dict[str, str]):
         self.item_id: int = Attendee.class_item_id   # internal to this program
         Attendee.class_item_id += 1
-        self.id: Union[str, int] = id         # comes from data input
+        self.id: Union[str, int] = _id         # comes from data input
         self.name: str = name
         self.attributes: dict[str, str] = attributes
         self.assigned_to_table: Optional[Table] = None

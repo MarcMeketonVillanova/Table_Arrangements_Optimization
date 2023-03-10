@@ -6,9 +6,10 @@ from src.parameters.parameters import Parameters
 from src.entity.table import Table
 from src.optimization_layer.assign_attendees_to_tables import assign_attendees_to_tables
 from src.optimization_layer.print_attendees_assigned_to_tables import output_summary
-import src.globals as globals
+import src.globals as _globals
 
 logger = logging.getLogger(__name__)
+
 
 def iterate_reoptimization(parameters: Parameters, tables: list[Table]):
     total_score = sum(table.score() for table in tables)
@@ -25,9 +26,9 @@ def iterate_reoptimization(parameters: Parameters, tables: list[Table]):
         pure_quadratic_penalty = False
 
     for iteration in range(parameters.max_iterations):
-        if globals.stop_execution:
+        if _globals.stop_execution:
             return
-        if (datetime.datetime.now() - globals.start_time).total_seconds() >= parameters.max_run_time_seconds:
+        if (datetime.datetime.now() - _globals.start_time).total_seconds() >= parameters.max_run_time_seconds:
             return
         attendees_to_assign = list()
         for table in tables:
