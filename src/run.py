@@ -68,5 +68,5 @@ def main():
     logger.info(f'Finished in {(datetime.datetime.now() - _globals.start_time).total_seconds():.2f} seconds')
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     main()
