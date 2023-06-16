@@ -31,7 +31,7 @@ def output_solution(parameters: Parameters, tables: list[Table]) -> pd.DataFrame
                 attribute_lists[attribute_name].append(attendee.attributes[attribute_name])
     table_assignments_dict_for_pd = {
         "Table": table_id,
-        'ID': attendee_id,
+        parameters.id_field_name: attendee_id,
         "NAME": attendee_name}
     for attribute_name in parameters.attribute_field_names:
         table_assignments_dict_for_pd[attribute_name] = attribute_lists[attribute_name]
